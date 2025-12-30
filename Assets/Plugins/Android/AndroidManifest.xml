@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.flyingchangesfarm.quickcopy">
+
+    <!-- Required for ML Kit model download on first launch -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Hand tracking permission (optional) -->
+    <uses-permission android:name="com.oculus.permission.HAND_TRACKING"/>
+
+    <!-- Hand tracking feature (optional, not required) -->
+    <uses-feature
+        android:name="oculus.software.handtracking"
+        android:required="false"/>
+
+    <!-- Passthrough feature for Quest -->
+    <uses-feature
+        android:name="com.oculus.feature.PASSTHROUGH"
+        android:required="true"/>
+
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:supportsRtl="true">
+
+        <!-- ML Kit auto-download model on install via Google Play Services -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr"/>
+
+        <!-- Hand tracking frequency for high-quality pinch detection -->
+        <meta-data
+            android:name="com.oculus.handtracking.frequency"
+            android:value="HIGH"/>
+
+        <!-- Enable passthrough support -->
+        <meta-data
+            android:name="com.oculus.supportedDevices"
+            android:value="quest3"/>
+
+        <!-- Declare this is a VR application -->
+        <meta-data
+            android:name="com.samsung.android.vr.application.mode"
+            android:value="vr_only"/>
+
+    </application>
+
+</manifest>

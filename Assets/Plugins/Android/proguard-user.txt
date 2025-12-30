@@ -1,0 +1,30 @@
+# QuickCopy AR ProGuard Rules
+
+# Keep ML Kit classes
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
+
+# Keep our plugin bridge class
+-keep class com.flyingchangesfarm.quickcopy.** { *; }
+
+# Keep Kotlin coroutines
+-keepnames class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+
+# Keep Unity player classes
+-keep class com.unity3d.player.** { *; }
+
+# Keep classes called via JNI
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Keep Parcelable implementations
+-keepclassmembers class * implements android.os.Parcelable {
+    static ** CREATOR;
+}
+
+# Keep native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}

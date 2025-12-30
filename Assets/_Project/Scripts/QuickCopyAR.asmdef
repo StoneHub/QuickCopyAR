@@ -1,0 +1,17 @@
+{
+    "name": "QuickCopyAR",
+    "rootNamespace": "QuickCopyAR",
+    "references": [
+        "Unity.TextMeshPro",
+        "Oculus.VR"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
