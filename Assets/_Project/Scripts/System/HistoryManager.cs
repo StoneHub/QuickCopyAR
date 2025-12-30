@@ -1,21 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace QuickCopyAR.System
 {
     /// <summary>
     /// Manages a history of recognized text.
-    /// Stores results in memory and provides persistence across sessions.
+    /// Stores results in memory and provides persistence to a JSON file.
     /// </summary>
     public class HistoryManager : MonoBehaviour
     {
         [Header("Settings")]
         [SerializeField] private int maxHistoryItems = 10;
-        [SerializeField] private bool persistToPlayerPrefs = true;
+        [SerializeField] private bool persistToFile = true;
 
         private List<HistoryItem> history = new List<HistoryItem>();
-        private const string PREFS_KEY = "QuickCopy_History";
+        private string HistoryFilePath => Path.Combine(Application.persistentDataPath, "history.json");
 
         [Serializable]
         public class HistoryItem
@@ -37,7 +38,7 @@ namespace QuickCopyAR.System
 
         private void Awake()
         {
-            if (persistToPlayerPrefs)
+            if (persistToFile)
             {
                 LoadHistory();
             }
@@ -64,7 +65,7 @@ namespace QuickCopyAR.System
 
             Utilities.Logger.Log("HistoryManager", $"Added to history: {item.Preview}");
             
-            if (persistToPlayerPrefs)
+            if (persistToFile)
             {
                 SaveHistory();
             }
@@ -80,10 +81,16 @@ namespace QuickCopyAR.System
         public void ClearHistory()
         {
             history.Clear();
-            if (persistToPlayerPrefs)
+            if (persistToFile && File.Exists(HistoryFilePath))
             {
-                PlayerPrefs.DeleteKey(PREFS_KEY);
-                PlayerPrefs.Save();
+                try
+                {
+                    File.Delete(HistoryFilePath);
+                }
+                catch (Exception e)
+                {
+                    Utilities.Logger.LogError("HistoryManager", $"Failed to delete history file: {e.Message}");
+                }
             }
             OnHistoryChanged?.Invoke();
         }
@@ -93,9 +100,8 @@ namespace QuickCopyAR.System
             try
             {
                 HistoryWrapper wrapper = new HistoryWrapper { Items = history };
-                string json = JsonUtility.ToJson(wrapper);
-                PlayerPrefs.SetString(PREFS_KEY, json);
-                PlayerPrefs.Save();
+                string json = JsonUtility.ToJson(wrapper, true);
+                File.WriteAllText(HistoryFilePath, json);
             }
             catch (Exception e)
             {
@@ -107,14 +113,15 @@ namespace QuickCopyAR.System
         {
             try
             {
-                if (PlayerPrefs.HasKey(PREFS_KEY))
+                if (File.Exists(HistoryFilePath))
                 {
-                    string json = PlayerPrefs.GetString(PREFS_KEY);
+                    string json = File.ReadAllText(HistoryFilePath);
                     HistoryWrapper wrapper = JsonUtility.FromJson<HistoryWrapper>(json);
                     if (wrapper != null && wrapper.Items != null)
                     {
                         history = wrapper.Items;
                     }
+                    Utilities.Logger.Log("HistoryManager", $"Loaded {history.Count} items from history");
                 }
             }
             catch (Exception e)

@@ -21,6 +21,9 @@ namespace QuickCopyAR.Capture
         [SerializeField] private AudioSource captureAudioSource;
         [SerializeField] private AudioClip captureSound;
 
+        [Header("AR References")]
+        [SerializeField] private UnityEngine.XR.ARFoundation.ARCameraManager arCameraManager;
+
         [Header("References")]
         [SerializeField] private Camera mainCamera;
 
@@ -37,6 +40,11 @@ namespace QuickCopyAR.Capture
             if (mainCamera == null)
             {
                 mainCamera = Camera.main;
+            }
+            
+            if (arCameraManager == null)
+            {
+                arCameraManager = FindObjectOfType<UnityEngine.XR.ARFoundation.ARCameraManager>();
             }
 
             InitializeCaptureResources();
@@ -108,15 +116,63 @@ namespace QuickCopyAR.Capture
 
         private Texture2D CaptureCurrentFrame()
         {
-            // Method 1: Try to capture from OVR Passthrough if available
+            // Method 1: Try AR Foundation (Best for raw camera access)
+            Texture2D arCapture = TryCaptureFromARFoundation();
+            if (arCapture != null)
+            {
+                Utilities.Logger.Log("CaptureManager", "Captured via AR Foundation");
+                return arCapture;
+            }
+
+            // Method 2: Try to capture from OVR Passthrough if available
             Texture2D passthroughCapture = TryCaptureFromPassthrough();
             if (passthroughCapture != null)
             {
                 return passthroughCapture;
             }
 
-            // Method 2: Fallback to screen capture
+            // Method 3: Fallback to screen capture
+            Utilities.Logger.Log("CaptureManager", "Fallback: Screen Capture");
             return CaptureFromScreen();
+        }
+
+        private Texture2D TryCaptureFromARFoundation()
+        {
+            if (arCameraManager == null) return null;
+
+            // Specifically for AR Foundation logic
+            try 
+            {
+                if (arCameraManager.TryAcquireLatestCpuImage(out UnityEngine.XR.ARSubsystems.XRCpuImage image))
+                {
+                    using (image)
+                    {
+                        var conversionParams = new UnityEngine.XR.ARSubsystems.XRCpuImage.ConversionParams
+                        {
+                            inputRect = new RectInt(0, 0, image.width, image.height),
+                            outputDimensions = new Vector2Int(image.width, image.height),
+                            outputFormat = TextureFormat.RGB24,
+                            transformation = UnityEngine.XR.ARSubsystems.XRCpuImage.Transformation.MirrorY
+                        }; // MirrorY is typical for selfie/UI, but for world-sensing, maybe None? 
+                           // Use None to match screen orientation if handled by camera rig.
+
+                        // Let's create the texture
+                        var texture = new Texture2D(image.width, image.height, TextureFormat.RGB24, false);
+                        
+                        // Convert to texture
+                        var rawData = texture.GetRawTextureData<byte>();
+                        image.Convert(conversionParams, rawData);
+                        texture.Apply();
+                        
+                        return texture;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Utilities.Logger.LogWarning("CaptureManager", $"AR Foundation capture failed: {e.Message}");
+            }
+            return null;
         }
 
         private Texture2D TryCaptureFromPassthrough()
